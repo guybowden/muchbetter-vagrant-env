@@ -1,12 +1,121 @@
-#
-# Cookbook Name:: postgresql
-# Attributes:: default
-#
-# Author:: Phil Cohen <github@phlippers.net>
-#
-# Copyright 2012, Phil Cohen
-#
+# chef-postgresql
 
+## Description
+
+Installs [PostgreSQL](http://www.postgresql.org), The world's most advanced open source database.
+
+This installs postgres 9.x from the [PostgreSQL backports for stable Ubuntu releases](https://launchpad.net/~pitti/+archive/postgresql).
+
+Currently supported versions:
+
+* `9.0`
+* `9.1`
+* `9.2`
+
+The default version is `9.1`.
+
+## Requirements
+
+### Supported Platforms
+
+The following platforms are supported by this cookbook, meaning that the recipes run on these platforms without error:
+
+* Ubuntu
+
+
+## Recipes
+
+* `postgresql` - Set up the apt repository and install dependent packages
+* `postgresql::client` - Front-end programs for PostgreSQL 9.x
+* `postgresql::server` - Object-relational SQL database, version 9.x server
+* `postgresql::contrib` - Additional facilities for PostgreSQL
+* `postgresql::dbg` - Debug symbols for the server daemon
+* `postgresql::doc` - Documentation for the PostgreSQL database management system
+* `postgresql::libpq` - PostgreSQL C client library and header files for libpq5 (PostgreSQL library)
+* `postgresql::postgis` - Geographic objects support for PostgreSQL 9.x
+
+
+## Usage
+
+This cookbook installs the postgresql components if not present, and pulls updates if they are installed on the system.
+
+Additionally this cookbook provides three definitions to create, alter and delete users as well as create and drop databases or setup extensions. Usage is as follows:
+
+
+```ruby
+# create a user
+pg_user "myuser" do
+  privileges :superuser => false, :createdb => false, :login => true
+  password "mypassword"
+end
+
+# create a user with an MD5-encrypted password
+pg_user "myuser" do
+  privileges :superuser => false, :createdb => false, :login => true
+  encrypted_password "667ff118ef6d196c96313aeaee7da519"
+end
+
+# drop a user
+pg_user "myuser" do
+  action :drop
+end
+
+# create a database
+pg_database "mydb" do
+  owner "myuser"
+  encoding "utf8"
+  template "template0"
+  locale "en_US.UTF8"
+end
+
+# install extensions to database
+pg_database_extensions "mydb" do
+  languages "plpgsql"              # install `plpgsql` language - single value may be passed without array
+  extensions ["hstore", "dblink"]  # install `hstore` and `dblink` extensions - multiple values in array
+  postgis true                     # install `postgis` support
+end
+
+# drop dblink extension
+pg_database_extensions "mydb" do
+  action :drop
+  extensions "dblink"
+end
+
+# drop a database
+pg_database "mydb" do
+  action :drop
+end
+```
+
+Or add the user/database via attributes:
+
+```ruby
+:users => [
+  {
+    :username  => "dickeyxxx",
+    :password  => "password",
+    :superuser => true,
+    :createdb  => true,
+    :login     => true
+  }
+],
+
+:databases => [
+  {
+    :name => "my_db",
+    :owner  => "dickeyxxx",
+    :template  => "template0",
+    :encoding  => "utf8",
+    :locale => "en_US.UTF8",
+    :extensions => "hstore"
+  }
+]
+```
+
+
+## Attributes
+
+```ruby
 default["postgresql"]["version"]                         = "9.1"
 
 default["postgresql"]["environment_variables"]           = {}
@@ -18,7 +127,6 @@ default["postgresql"]["start"]                           = "auto"  # auto, manua
 #------------------------------------------------------------------------------
 # POSTGIS
 #------------------------------------------------------------------------------
-
 default["postgis"]["version"]                            = "1.5"
 
 #------------------------------------------------------------------------------
@@ -355,3 +463,62 @@ default["postgresql"]["databases"]                       = []
 #------------------------------------------------------------------------------
 
 default["postgresql"]["custom_variable_classes"]         = ""
+```
+
+
+## TODO
+
+* Add support for replication setup
+* Add support for custom config files
+* Add installation and configuration for the following packages:
+
+```
+postgresql-{version}-debversion
+postgresql-{version}-ip4r
+postgresql-{version}-pljava-gcj
+postgresql-plperl-{version}
+postgresql-{version}-pllua
+postgresql-{version}-plproxy
+postgresql-plpython-{version}
+postgresql-{version}-plr
+postgresql-{version}-plsh
+postgresql-pltcl-{version}
+postgresql-server-dev-{version}
+```
+
+
+## Contributing
+
+1. Fork it
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Added some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new Pull Request
+
+
+## Contributors
+
+Many thanks go to the following who have contributed to making this cookbook even better:
+
+* **[@flashingpumpkin](https://github.com/flashingpumpkin)**
+  * recipe bugfixes
+  * add `pg_user` and `pg_database` definitions
+* **[@cmer](https://github.com/cmer)**
+  * add `encrypted_password` param for `pg_user` definition
+* **[@dickeyxxx](https://github.com/dickeyxxx)**
+  * speed up recipe loading and execution
+  * add support for specifying database locale
+  * add support for adding users and databases via attributes
+* **[@alno](https://github.com/alno)**
+  * add support to install additional languages/extensions/postgis to existing databases
+  * add `pg_database_extensions` definition
+
+
+
+## License
+
+**chef-postgresql**
+
+* Freely distributable and licensed under the [MIT license](http://phlipper.mit-license.org/2012/license.html).
+* Copyright (c) 2012 Phil Cohen (github@phlippers.net) [![endorse](http://api.coderwall.com/phlipper/endorsecount.png)](http://coderwall.com/phlipper)
+* http://phlippers.net/

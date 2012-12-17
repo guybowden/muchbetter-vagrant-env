@@ -2,22 +2,31 @@
 # Cookbook Name:: postgresql
 # Recipe:: postgis
 #
-# Copyright 2010, FindsYou Limited
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
 
-include_recipe "postgresql::server"
+require_recipe "postgresql"
+require_recipe "geos"
+require_recipe "proj4"
 
-package "postgis"
-package "postgresql-#{node.postgresql.version}-postgis" if %w( debian ubuntu ).include?(node.platform)
+package "postgresql-#{node["postgresql"]["version"]}-postgis"
+
+bash "create_postgis_template" do
+    user "postgres"
+    code <<-EOH
+        POSTGIS_SQL_PATH=/usr/share/postgresql/9.1/contrib/postgis-1.5
+
+        # Creating the template spatial database.
+        createdb template_postgis
+        createlang -d template_postgis plpgsql
+
+        # Allows non-superusers the ability to create from this template
+        psql -d postgres -c "UPDATE pg_database SET datistemplate='true' WHERE datname='template_postgis';"
+        # Loading the PostGIS SQL routines
+        psql -d template_postgis -f $POSTGIS_SQL_PATH/postgis.sql
+        psql -d template_postgis -f $POSTGIS_SQL_PATH/spatial_ref_sys.sql
+        
+        # Enabling users to alter spatial tables.
+        psql -d template_postgis -c "GRANT ALL ON geometry_columns TO PUBLIC;"
+        psql -d template_postgis -c "GRANT ALL ON geography_columns TO PUBLIC;"
+        psql -d template_postgis -c "GRANT ALL ON spatial_ref_sys TO PUBLIC;"
+    EOH
+end

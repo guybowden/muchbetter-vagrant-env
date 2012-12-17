@@ -1,10 +1,10 @@
 include_recipe "build-essential"
-include_recipe "postgresql::server"
+include_recipe "postgresql9::server"
 include_recipe "geos"
 include_recipe "proj4"
 
 # Packages we require
-package "postgresql-server-dev-8.4"
+package "postgresql-server-dev-9.1"
 package "libpq-dev" # for pg_config
 
 version = node[:postgis][:version]
