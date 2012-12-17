@@ -3,9 +3,9 @@
 # Recipe:: postgis
 #
 
-require_recipe "postgresql"
-require_recipe "geos"
-require_recipe "proj4"
+include_recipe "postgresql"
+include_recipe "geos"
+include_recipe "proj4"
 
 package "postgresql-#{node["postgresql"]["version"]}-postgis"
 

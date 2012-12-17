@@ -11,8 +11,8 @@ Vagrant::Config.run do |config|
   # Share an additional folder to the guest VM. The first argument is
   # an identifier, the second is the path on the guest to mount the
   # folder, and the third is the path on the host to the actual folder.
-  # config.vm.share_folder "v-data", "/vagrant_data", "../data"
-  config.vm.share_folder "v-data", "/seekr", "../"
+  config.vm.share_folder "v-src", "/src", "../src"
+  config.vm.share_folder "v-data", "/data", "../data"
 
   # Enable provisioning with chef solo, specifying a cookbooks path (relative
   # to this Vagrantfile), and adding some recipes and/or roles.  
@@ -44,17 +44,20 @@ Vagrant::Config.run do |config|
       chef.cookbooks_path = File.join(HERE, 'cookbooks')
       chef.add_recipe("apt")
       chef.add_recipe("postgresql::server")
+      chef.add_recipe("postgresql::libpq")
       chef.add_recipe("postgresql::postgis")
       chef.add_recipe("python-pip")
       chef.add_recipe("virtualenvwrapper")
       chef.add_recipe("python-pip")
+      chef.add_recipe("git")
+      chef.add_recipe("muchbetter")
       chef.json = {
         :postgresql => {
           :version  => "9.1",
           :listen_addresses => "*",
           :pg_hba => [
-            "host all all 0.0.0.0/0 md5",
-            "host all all ::1/0 md5",
+            "host all all 0.0.0.0/0 trust",
+            "host all all ::1/0 trust",
           ],
           :users => [
             { :username => "vagrant", :password => "",
